@@ -39,23 +39,23 @@ function_descriptions = [
 ]
 
 
-email = """
-Bonjour,
-Nous venons de trouver une grosse fuite sur la pompe 1EASOO1PO. Nous avons mis un seau sous la fuite mais il faut le vider toutes les heures. La conduite s'en occupe.
-Pourriez-vous demander à l'équipe réactive d'intervenir.
-"""
+#email = """
+#Bonjour,
+#Nous venons de trouver une grosse fuite sur la pompe 1EASOO1PO. Nous avons mis un seau sous la fuite mais il faut le vider toutes les heures. La conduite s'en occupe.
+#Pourriez-vous demander à l'équipe réactive d'intervenir.
+#""""
 
-prompt = f"Pouvez-vous extraire les informations clés de l'email?: {email} "
-message = [{"role": "user", "content": prompt}]
+#prompt = f"Pouvez-vous extraire les informations clés de l'email?: {email} "
+#message = [{"role": "user", "content": prompt}]
 
-response = openai.ChatCompletion.create(
-    model="gpt-3.5-turbo",
-    messages=message,
-    functions = function_descriptions,
-    function_call="auto"
-)
+#response = openai.ChatCompletion.create(
+#    model="gpt-3.5-turbo",
+#    messages=message,
+#    functions = function_descriptions,
+#    function_call="auto"
+#"")
 
-print(response)
+#print(response)
 
 class Email(BaseModel):
      from_email: str
