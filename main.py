@@ -12,59 +12,44 @@ app = FastAPI()
 function_descriptions = [
     {
         "name": "extract_info_from_email",
-        "description": "categorise & extract key info from an email, such as use case, company name, contact details, etc.",
+        "description": "Extraitre les informations d'un eamil sur une centrale de production électrique pour créer une demande de travail dans un système EAM",
         "parameters": {
             "type": "object",
             "properties": {
-                "companyName": {
+                "TITRE": {
                     "type": "string",
-                    "description": "the name of the company that sent the email"
-                },                                        
-                "product": {
-                    "type": "string",
-                    "description": "Try to identify which product the client is interested in, if any"
+                    "description": "un résumé de l'email envoyé"
                 },
-                "amount":{
+                "EQUIPEMENT": {
                     "type": "string",
-                    "description": "Try to identify the amount of products the client wants to purchase, if any"
+                    "description": "essayer d'identifier la référence de l'équipement, uniquement l'identifiant"
                 },
-                "category": {
+                "PRIORITE":{
                     "type": "string",
-                    "description": "Try to categorise this email into categories like those: 1. Sales 2. customer support; 3. consulting; 4. partnership; etc."
+                    "priority": "Essayer d'identifier la priorité de l'anomale parmi les 3 valeurs suivantes: 1. HAUT; 2. MOYEN; 3. BAS"
                 },
-                "nextStep":{
+                "DISCIPLINE": {
                     "type": "string",
-                    "description": "What is the suggested next step to move this forward?"
-                },
-                "priority": {
-                    "type": "string",
-                    "description": "Try to give a priority score to this email based on how likely this email will leads to a good business opportunity, from 0 to 10; 10 most important"
+                    "description": "Essayer de classifier le corps de métier concerné parmi: 1. MECANICIEN 2. ELECTRICIEN ; 3. AUTOMATICIEN; 4. ROBINETIER"
                 },
             },
-            "required": ["companyName", "amount", "product", "priority", "category", "nextStep"]
+            "required": ["TITRE", "EQUIPEMENT", "PRIORITE", "DISCIPLINE"]
         }
     }
 ]
 
 
 email = """
-Dear Jason 
-I hope this message finds you well. I'm Shirley from Gucci;
-
-I'm looking to purchase some company T-shirt for my team, we are a team of 100k people, and we want to get 2 t-shirt per personl
-
-Please let me know the price and timeline you can work with;
-
-Looking forward
-
-Shirley Lou
+Bonjour,
+Nous venons de trouver une grosse fuite sur la pompe 1EASOO1PO. Nous avons mis un seau sous la fuite mais il faut le vider toutes les heures. La conduite s'en occupe.
+Pourriez-vous demander à l'équipe réactive d'intervenir.
 """
 
-prompt = f"Please extract key information from this email: {email} "
+prompt = f"Pouvez-vous extraire les informations clés de l'email?: {email} "
 message = [{"role": "user", "content": prompt}]
 
 response = openai.ChatCompletion.create(
-    model="gpt-4-0613",
+    model="gpt-3.5-turbo",
     messages=message,
     functions = function_descriptions,
     function_call="auto"
@@ -72,49 +57,37 @@ response = openai.ChatCompletion.create(
 
 print(response)
 
+class Email(BaseModel):
+     from_email: str
+     content: str
 
+@app.get("/")
+def read_root():
+    return {"Hello": "World"}
 
+@app.post("/")
+def analyse_email(email: Email):
+     content = email.content
+     query = f"Extraire l'information clé de cet email: {content} "
 
+     messages = [{"role": "user", "content": query}]
 
+     response = openai.ChatCompletion.create(
+         model="gpt-3.5-turbo",
+         messages=messages,
+         functions = function_descriptions,
+         function_call="auto"
+     )
 
+     arguments = response.choices[0]["message"]["function_call"]["arguments"]
+     TITRE = eval(arguments).get("TITRE")
+     EQUIPEMENT = eval(arguments).get("EQUIPEMENT")
+     PRIORITE = eval(arguments).get("PRIORITE")
+     DISCIPLINE = eval(arguments).get("DISCIPLINE")
 
-
-# class Email(BaseModel):
-#     from_email: str
-#     content: str
-
-# @app.get("/")
-# def read_root():
-#     return {"Hello": "World"}
-
-# @app.post("/")
-# def analyse_email(email: Email):
-#     content = email.content
-#     query = f"Please extract key information from this email: {content} "
-
-#     messages = [{"role": "user", "content": query}]
-
-#     response = openai.ChatCompletion.create(
-#         model="gpt-4-0613",
-#         messages=messages,
-#         functions = function_descriptions,
-#         function_call="auto"
-#     )
-
-#     arguments = response.choices[0]["message"]["function_call"]["arguments"]
-#     companyName = eval(arguments).get("companyName")
-#     priority = eval(arguments).get("priority")
-#     product = eval(arguments).get("product")
-#     amount = eval(arguments).get("amount")
-#     category = eval(arguments).get("category")
-#     nextStep = eval(arguments).get("nextStep")
-
-#     return {
-#         "companyName": companyName,
-#         "product": product,
-#         "amount": amount,
-#         "priority": priority,
-#         "category": category,
-#         "nextStep": nextStep
-#     }
-
+     return {
+         "TITRE": TITRE,
+         "EQUIPEMENT": EQUIPEMENT,
+         "PRIORITE": PRIORITE,
+         "DISCIPLINE": DISCIPLINE
+     }
